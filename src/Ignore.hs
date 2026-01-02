@@ -70,6 +70,10 @@ parsePattern source =
           pAnchored = anchored
         }
 
+-- | Parse a complete gitignore file content into an 'Ignore' collection.
+--
+-- Strips whitespace, removes comments (lines starting with @#@), and parses
+-- each remaining line as a pattern.
 parse :: Text -> Ignore
 parse source =
   let sourceLines = filter (not . T.null) $ map T.strip $ T.lines source
@@ -122,8 +126,15 @@ ignoresInner :: Ignore -> [OsPath] -> Bool -> Bool
 ignoresInner (Ignore patterns) splitPath dir =
   last $ False : mapMaybe (\pat -> patternIgnores pat splitPath dir) patterns
 
+-- | Check if an 'Ignore' collection ignores the given path.
+--
+-- The third parameter indicates whether the path is a directory.
 ignores :: Ignore -> OsPath -> Bool -> Bool
 ignores ign path = ignoresInner ign (splitDirectories path)
 
+-- | Check if an 'Ignore' collection ignores the given pre-split path.
+--
+-- Like 'ignores', but takes a path already split into components. The third
+-- parameter indicates whether the path is a directory.
 ignores' :: Ignore -> [OsPath] -> Bool -> Bool
 ignores' = ignoresInner
