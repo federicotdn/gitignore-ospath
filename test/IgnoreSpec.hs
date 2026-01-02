@@ -3,9 +3,9 @@ module Main (main) where
 import Data.Text (Text)
 import qualified Data.Text as T
 import Ignore
-import Test.Hspec
-import System.OsString (OsString)
 import System.OsPath (unsafeEncodeUtf)
+import System.OsString (OsString)
+import Test.Hspec
 
 os :: String -> OsString
 os = unsafeEncodeUtf
@@ -160,4 +160,3 @@ spec = do
       ignores (parseln ["*", "!*/", "!**/*.py"]) (os "bar.py") False `shouldBe` False
       ignores (parseln ["*", "!*/", "!**/*.py"]) (os "foo/bar.py") False `shouldBe` False
       ignores (parseln ["*", "!*/", "!*.py"]) (os "foo/bar.py") False `shouldBe` False
-
