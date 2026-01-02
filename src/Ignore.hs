@@ -1,4 +1,4 @@
--- | Gitignore pattern matching for 'OsPath'.
+-- | Gitignore pattern matching for 'System.OsPath.OsPath'.
 module Ignore
   ( Ignore (..),
     parse,

@@ -1,4 +1,4 @@
-.PHONY: build lint test repl install fmt
+.PHONY: build lint test repl install fmt docs
 
 build:
 	cabal build -j
@@ -14,3 +14,6 @@ repl:
 
 fmt:
 	@ormolu -m inplace $$(git ls-files '*.hs')
+
+docs:
+	cabal haddock --haddock-hyperlink-source --haddock-quickjump

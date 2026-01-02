@@ -26,8 +26,18 @@ data Pattern = Pattern
   }
   deriving (Show, Eq)
 
+-- | The parsed contents of a gitignore file.
+--
+-- Multiple 'Ignore' values can be combined using '<>' to merge their patterns.
+-- This is useful for combining patterns from multiple gitignore files (e.g.,
+-- a global gitignore and a repository-specific one). Later patterns take
+-- precedence when determining if a path should be ignored.
 newtype Ignore = Ignore [Pattern] deriving (Show, Eq)
 
+-- | Combine gitignore files by appending their patterns.
+--
+-- When combining @ignore1 <> ignore2@, patterns from @ignore2@ are appended
+-- after @ignore1@, meaning later patterns take precedence for matching.
 instance Semigroup Ignore where
   (Ignore p1) <> (Ignore p2) = Ignore (p1 <> p2)
 
