@@ -59,4 +59,4 @@ The `ignores'` variant of `ignores` takes an `OsPath` that was already split (i.
 
 Patterns containing ranges (`[a-zA-z]`), optional characters (`a?`), wildcards (`*`) and escape sequences (`\*`) are not yet supported, and will be interpreted literally.
 
-As an exception, patterns in the form of `*abc` or `abc*` are supported, which should cover a good amount of patterns such as `.*` (hidden files) or `*.py` (file extensions).
+As an exception, patterns in the form of `*abc` or `abc*` are supported, which should cover a good amount of patterns such as `.*` (hidden files) or `*.py` (file extensions). Plain `*` is supported as well.
