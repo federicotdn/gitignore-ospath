@@ -1,7 +1,7 @@
 cabal-version:      3.0
 name:               gitignore-ospath
 version:            0.1.0
-synopsis:           A compact OsPath-based Haskell .gitignore library.
+synopsis:           A compact Haskell library for reading `.gitignore` files and filtering paths.
 homepage:           https://github.com/federicotdn/gitignore-ospath
 license:            Apache-2.0
 license-file:       LICENSE
