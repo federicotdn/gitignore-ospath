@@ -3,6 +3,7 @@ module Main (main) where
 import Data.Text (Text)
 import qualified Data.Text as T
 import Ignore
+import Ignore.Internal
 import System.OsPath (unsafeEncodeUtf)
 import System.OsString (OsString)
 import Test.Hspec

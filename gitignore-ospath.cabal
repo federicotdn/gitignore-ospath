@@ -26,6 +26,7 @@ library
     import:           warnings
                     , shared-deps
     exposed-modules:  Ignore
+    other-modules:    Ignore.Internal
     hs-source-dirs:   src
 
 test-suite gitignore-ospath-test
@@ -33,7 +34,10 @@ test-suite gitignore-ospath-test
                     , shared-deps
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
+                    , src
     main-is:          IgnoreSpec.hs
+    other-modules:    Ignore
+                    , Ignore.Internal
     build-depends:    base ^>=4.18.3.0
                     , hspec ^>=2.11.16
                     , gitignore-ospath
