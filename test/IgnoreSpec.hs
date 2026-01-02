@@ -131,6 +131,7 @@ spec = do
       ignores (parse "/*/") (os "test/foo") True `shouldBe` False
       ignores (parse "**/*.py") (os "zzz") False `shouldBe` False
       ignores (parse "!**/*.py") (os "zzz") False `shouldBe` False
+      ignores (parse "/baz/**") (os "a/baz/foo") False `shouldBe` False
       -- From https://git-scm.com/docs/gitignore:
       ignores (parse "doc/frotz/") (os "doc/frotz") True `shouldBe` True
       ignores (parse "doc/frotz/") (os "a/doc/frotz") True `shouldBe` False
