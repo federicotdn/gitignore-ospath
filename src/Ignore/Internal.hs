@@ -95,13 +95,13 @@ patternIgnoresInner :: Pattern -> [OsPath] -> Maybe Bool
 patternIgnoresInner pat@Pattern {pNegated = True} splitPath =
   not <$> patternIgnoresInner pat {pNegated = False} splitPath
 patternIgnoresInner pat@Pattern {pSegments = segs} splitPath =
-  if null splitPath
-    then
+  case splitPath of
+    [] ->
       -- Exhausted path without returning False, meaning we might
       -- have an ignore-match. This depends on whether there is more
       -- pattern to match.
       if null segs then Just True else Nothing
-    else case segs of
+    (pathHead : pathTail) -> case segs of
       [] -> Nothing
       (DAsterisk : rest) ->
         if null rest
@@ -110,10 +110,9 @@ patternIgnoresInner pat@Pattern {pSegments = segs} splitPath =
             let matches = mapMaybe (patternIgnoresInner (pat {pSegments = rest})) (init $ tails splitPath)
              in if null matches then Nothing else Just (or matches)
       (seg : rest) ->
-        let tailPath = drop 1 splitPath
-            match = segmentMatches seg (head splitPath)
-            continued = patternIgnoresInner (pat {pSegments = rest}) tailPath
-            retry = if null tailPath then Nothing else patternIgnoresInner pat tailPath
+        let match = segmentMatches seg pathHead
+            continued = patternIgnoresInner (pat {pSegments = rest}) pathTail
+            retry = if null pathTail then Nothing else patternIgnoresInner pat pathTail
          in if pAnchored pat
               then if match then continued else Nothing
               else (if match && isJust continued then continued else retry)
