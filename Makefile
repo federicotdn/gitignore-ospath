@@ -7,7 +7,7 @@ lint:
 	hlint src test
 
 test:
-	cabal test -j
+	cabal test -j --enable-tests
 
 repl:
 	cabal repl
