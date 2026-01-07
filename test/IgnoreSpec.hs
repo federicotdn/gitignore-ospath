@@ -4,12 +4,14 @@ import Data.Text (Text)
 import qualified Data.Text as T
 import Ignore
 import Ignore.Internal
-import System.OsPath (unsafeEncodeUtf)
-import System.OsString (OsString)
+import System.OsString (OsChar, OsString, unsafeEncodeUtf, unsafeFromChar)
 import Test.Hspec
 
 os :: String -> OsString
 os = unsafeEncodeUtf
+
+osc :: Char -> OsChar
+osc = unsafeFromChar
 
 main :: IO ()
 main = hspec spec
@@ -48,7 +50,17 @@ spec = do
       parse "**/path/" `shouldBe` Ignore [pat [DAsterisk, path "path"] True False True]
       parse "/path/**" `shouldBe` Ignore [pat [path "path", DAsterisk] False False True]
       parse "/path/**/" `shouldBe` Ignore [pat [path "path", DAsterisk] True False True]
-
+      parse "a?" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Wildcard False]] False False False]
+      parse "*a*" `shouldBe` Ignore [pat [Glob [Wildcard True, Chars [osc 'a'], Wildcard True]] False False False]
+      parse "a]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Chars [osc ']']]] False False False]
+      parse "\\a" `shouldBe` Ignore [pat [Glob [Chars [osc 'a']]] False False False]
+      parse "a\\?" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Chars [osc '?']]] False False False]
+      parse "[ab]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a', osc 'b']]] False False False]
+      parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a', osc ']']]] False False False]
+      parse "a[" `shouldBe` Ignore [] -- Unclosed range
+      parse "a[b" `shouldBe` Ignore [] -- Unclosed range
+      parse "[]" `shouldBe` Ignore [] -- Empty
+      parse "[a\\]" `shouldBe` Ignore [] -- Unclosed range
   describe "ignores" $ do
     it "ignores paths correctly (single pattern)" $ do
       ignores (parse "") (os "") False `shouldBe` False
@@ -133,6 +145,10 @@ spec = do
       ignores (parse "**/*.py") (os "zzz") False `shouldBe` False
       ignores (parse "!**/*.py") (os "zzz") False `shouldBe` False
       ignores (parse "/baz/**") (os "a/baz/foo") False `shouldBe` False
+      -- Globs
+      -- ignores (parse "foo]") (os "foo]") False `shouldBe` True
+      -- ignores (parse "\\?") (os "?") False `shouldBe` True
+
       -- From https://git-scm.com/docs/gitignore:
       ignores (parse "doc/frotz/") (os "doc/frotz") True `shouldBe` True
       ignores (parse "doc/frotz/") (os "a/doc/frotz") True `shouldBe` False

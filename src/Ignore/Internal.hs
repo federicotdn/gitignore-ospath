@@ -5,18 +5,22 @@ import Data.Maybe (isJust, mapMaybe)
 import Data.Text (Text)
 import qualified Data.Text as T
 import GHC.IO.Encoding (utf16le, utf8)
-import System.OsPath (OsPath, encodeWith, splitDirectories)
+import System.OsPath (OsPath, splitDirectories)
+import System.OsString (OsChar, encodeWith)
 import qualified System.OsString as OS
+import Text.ParserCombinators.ReadP (ReadP)
+import qualified Text.ParserCombinators.ReadP as R
 
--- TODO: Add a Glob constructor to match more complex segments
--- such as "abc?d", "foo*bar", "a[a-zA-Z]b", etc.
 data Segment
   = DAsterisk
   | Asterisk
   | Const OsPath
   | Prefix OsPath
   | Suffix OsPath
+  | Glob [GlobPart]
   deriving (Show, Eq)
+
+data GlobPart = Wildcard Bool | Chars [OsChar] | Noop deriving (Show, Eq)
 
 data Pattern = Pattern
   { pSegments :: [Segment],
@@ -41,12 +45,73 @@ newtype Ignore = Ignore [Pattern] deriving (Show, Eq)
 instance Semigroup Ignore where
   (Ignore p1) <> (Ignore p2) = Ignore (p1 <> p2)
 
+encodeChar :: Char -> Maybe OsChar
+encodeChar ch =
+  let str = [ch]
+      encoded = OS.unpack <$> encodeWith utf8 utf16le str
+   in case encoded of
+        Left _ -> Nothing
+        Right [] -> Nothing
+        Right (osch : _) -> Just osch
+
+getOsChar :: ReadP (Char, OsChar)
+getOsChar = do
+  ch <- R.get
+  let osch = encodeChar ch
+  case osch of
+    Just osch' -> pure (ch, osch')
+    Nothing -> R.pfail
+
+parseGlobInner :: [GlobPart] -> Maybe [OsChar] -> ReadP [GlobPart]
+parseGlobInner curr range = do
+  atEnd <- null <$> R.look
+  case range of
+    Nothing ->
+      if atEnd
+        then return curr
+        else do
+          (ch, osch) <- getOsChar
+          case ch of
+            '[' -> contWith Noop (Just [])
+            '?' -> contWith (Wildcard False) Nothing
+            '*' -> contWith (Wildcard True) Nothing
+            '\\' -> do
+              -- Read one more, interpret it literally.
+              -- If there's nothing to read, pfail.
+              (_, osch') <- getOsChar
+              contWith (Chars [osch']) Nothing
+            _ -> contWith (Chars [osch]) Nothing -- Even for ']'.
+    Just range' -> do
+      -- The line below will fail if there's nothing to read, i.e.
+      -- the range was opened but never closed.
+      (ch, osch) <- getOsChar
+      case ch of
+        ']' -> contWith (if null range' then Noop else Chars range') Nothing
+        '\\' -> do
+          (_, osch') <- getOsChar
+          contWith Noop $ Just (range' ++ [osch'])
+        _ -> contWith Noop $ Just (range' ++ [osch])
+  where
+    contWith p = parseGlobInner (curr ++ [p])
+
+parseGlob :: Text -> Maybe Segment
+parseGlob source = do
+  let result = R.readP_to_S (parseGlobInner [] Nothing) (T.unpack source)
+  case result of
+    [] -> Nothing
+    (r : _) -> do
+      let parts = filter (/= Noop) $ fst r
+      case parts of
+        [] -> Nothing
+        _ -> Just (Glob parts)
+
 parseSegment :: Text -> Maybe Segment
 parseSegment source
   | source == "**" = Just DAsterisk
   | source == "*" = Just Asterisk
   | scount == 0 && acount == 1 && aprefix = Suffix . OS.tail <$> encoded
   | scount == 0 && acount == 1 && asuffix = Prefix . OS.init <$> encoded
+  | scount > 0 || acount > 0 = parseGlob source
   | otherwise = Const <$> encoded
   where
     aprefix = "*" `T.isPrefixOf` source
@@ -55,7 +120,7 @@ parseSegment source
     scount = T.length (T.filter (`elem` ['[', ']', '?', '\\']) source)
     encoded = either (const Nothing) Just $ encodeWith utf8 utf16le (T.unpack source)
 
-parsePattern :: Text -> Pattern
+parsePattern :: Text -> Maybe Pattern
 parsePattern source =
   let (source', negated) =
         if not (T.null source) && T.head source == '!'
@@ -65,12 +130,16 @@ parsePattern source =
       segments' = mapMaybe parseSegment segments
       dir = "/" `T.isSuffixOf` source'
       anchored = "/" `T.isPrefixOf` source' || length segments' > 1
-   in Pattern
-        { pSegments = segments',
-          pDir = dir,
-          pNegated = negated,
-          pAnchored = anchored
-        }
+   in if null segments'
+        then Nothing
+        else
+          Just
+            Pattern
+              { pSegments = segments',
+                pDir = dir,
+                pNegated = negated,
+                pAnchored = anchored
+              }
 
 -- | Parse a complete gitignore file content into an 'Ignore' collection.
 --
@@ -80,7 +149,7 @@ parse :: Text -> Ignore
 parse source =
   let sourceLines = filter (not . T.null) $ map T.strip $ T.lines source
       patterns = filter (\l -> T.head l /= '#') sourceLines
-   in Ignore (map parsePattern patterns)
+   in Ignore (mapMaybe parsePattern patterns)
 
 segmentMatches :: Segment -> OsPath -> Bool
 segmentMatches target path = case target of
@@ -88,6 +157,7 @@ segmentMatches target path = case target of
   Const val -> path == val
   Suffix val -> val `OS.isSuffixOf` path
   Prefix val -> val `OS.isPrefixOf` path
+  Glob _ -> error "Unhandled Glob"
   -- NOTE: DAsterisk is already handled in 'patternIgnoresInner'.
   DAsterisk -> error "Unhandled ** pattern"
 
