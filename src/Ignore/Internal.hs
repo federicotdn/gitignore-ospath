@@ -11,6 +11,19 @@ import qualified System.OsString as OS
 import Text.ParserCombinators.ReadP (ReadP)
 import qualified Text.ParserCombinators.ReadP as R
 
+data GlobClassPart
+  = ClassSingle OsChar
+  | ClassRange (OsChar, OsChar)
+  | ClassSep
+  deriving (Show, Eq)
+
+data GlobPart
+  = Wildcard Bool
+  | Single OsChar
+  | Class [GlobClassPart]
+  | Noop
+  deriving (Show, Eq)
+
 data Segment
   = DAsterisk
   | Asterisk
@@ -19,10 +32,6 @@ data Segment
   | Suffix OsPath
   | Glob [GlobPart]
   deriving (Show, Eq)
-
-data GlobClassPart = ClassSingle OsChar | ClassRange (OsChar, OsChar) | ClassSep deriving (Show, Eq)
-
-data GlobPart = Wildcard Bool | Single OsChar | Class [GlobClassPart] | Noop deriving (Show, Eq)
 
 data Pattern = Pattern
   { pSegments :: [Segment],
