@@ -56,6 +56,7 @@ newtype Ignore = Ignore [Pattern] deriving (Show, Eq)
 instance Semigroup Ignore where
   (Ignore p1) <> (Ignore p2) = Ignore (p1 <> p2)
 
+-- TODO: This is probably overkill for encoding just one char.
 encodeChar :: Char -> Maybe OsChar
 encodeChar ch =
   let str = [ch]
@@ -190,7 +191,7 @@ segmentMatches target path = case target of
   Literal val -> path == val
   Suffix val -> val `OS.isSuffixOf` path
   Prefix val -> val `OS.isPrefixOf` path
-  Glob _ -> error "Unhandled Glob"
+  Glob _ -> error "Unhandled Glob" -- TODO
   -- NOTE: DAsterisk is already handled in 'patternIgnoresInner'.
   DAsterisk -> error "Unhandled ** pattern"
 
