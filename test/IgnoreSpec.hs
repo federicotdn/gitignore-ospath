@@ -58,13 +58,19 @@ spec = do
       parse "[ab]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'b')]]] False False False]
       parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc ']')]]] False False False]
       parse "[-]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '-')]]] False False False]
+      parse "[a-]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'a')]]] False False False]
       parse "[a-z]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z')]]] False False False]
+      parse "[a--z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'z')]]] False False False]
       parse "[1a-z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '1'), ClassRange (osc 'a', osc 'z')]]] False False False]
       parse "[a-z2]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z'), ClassSingle (osc '2')]]] False False False]
+      parse "[a-zA-Z]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z'), ClassRange (osc 'A', osc 'Z')]]] False False False]
       parse "[-a-z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '-'), ClassRange (osc 'a', osc 'z')]]] False False False]
       parse "[a-z-]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z'), ClassSingle (osc '-')]]] False False False]
       parse "[z-a]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
       parse "[z-z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
+      parse "[z-a-m]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
+      parse "[]]" `shouldBe` Ignore [pat [Glob [Single (osc ']')]] False False False]
+      parse "[[]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '[')]]] False False False]
       parse "a[" `shouldBe` Ignore [] -- Unclosed class
       parse "a[b" `shouldBe` Ignore [] -- Unclosed class
       parse "[]" `shouldBe` Ignore [] -- Empty

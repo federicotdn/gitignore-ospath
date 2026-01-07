@@ -105,7 +105,7 @@ parseGlobInner curr class_ = do
               ClassSingle cs -> contWith Noop $ Just (init class_' ++ [ClassRange (cs, cs)])
               ClassRange (start, end) -> do
                 if start == end -- Range is not finished yet
-                  then contWith Noop $ Just (init class_')
+                  then contWith Noop $ Just (init class_' ++ [ClassSingle start])
                   else contWith Noop $ Just (class_' ++ [ClassSingle osch])
         _ -> do
           -- Maybe read one more char.
