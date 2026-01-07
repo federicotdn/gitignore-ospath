@@ -20,7 +20,7 @@ data Segment
   | Glob [GlobPart]
   deriving (Show, Eq)
 
-data GlobClassPart = ClassSingle OsChar | ClassRange (OsChar, OsChar) deriving (Show, Eq)
+data GlobClassPart = ClassSingle OsChar | ClassRange (OsChar, OsChar) | ClassSep deriving (Show, Eq)
 
 data GlobPart = Wildcard Bool | Single OsChar | Class [GlobClassPart] | Noop deriving (Show, Eq)
 
@@ -64,11 +64,11 @@ getOsChar = do
     Just osch' -> pure (ch, osch')
     Nothing -> R.pfail
 
-finishRange :: (OsChar, OsChar) -> GlobClassPart
+finishRange :: (OsChar, OsChar) -> [GlobClassPart]
 finishRange (start, end) =
   if start < end
-    then ClassRange (start, end)
-    else ClassSingle start
+    then [ClassRange (start, end), ClassSep]
+    else [ClassSingle start, ClassSep]
 
 parseGlobInner :: [GlobPart] -> Maybe [GlobClassPart] -> ReadP [GlobPart]
 parseGlobInner curr class_ = do
@@ -81,15 +81,14 @@ parseGlobInner curr class_ = do
         else do
           (ch, osch) <- getOsChar
           case ch of
-            '[' -> contWith Noop (Just [])
+            '[' -> contWith Noop (Just []) -- Start building a class.
             '?' -> contWith (Wildcard False) Nothing
             '*' -> contWith (Wildcard True) Nothing
             '\\' -> do
-              -- Read one more, interpret it literally.
-              -- If there's nothing to read, pfail.
+              -- Maybe read one more char.
               (_, osch') <- getOsChar
               contWith (Single osch') Nothing
-            _ -> contWith (Single osch) Nothing -- Even for ']'.
+            _ -> contWith (Single osch) Nothing -- Includes ']' case.
 
     -- We are inside a class definition e.g. abcd[e|fg]
     Just class_' -> do
@@ -97,27 +96,25 @@ parseGlobInner curr class_ = do
       -- the class was opened but never closed.
       (ch, osch) <- getOsChar
       case ch of
-        ']' -> contWith (if null class_' then Noop else Class class_') Nothing
+        ']' -> do
+          let classParts = filter (/= ClassSep) class_'
+          contWith (if null classParts then Noop else Class classParts) Nothing
         '-' -> do
           case class_' of
             [] -> contWith Noop $ Just [ClassSingle osch]
             elems -> case last elems of
+              ClassRange (start, _) -> contWith Noop $ Just (init class_' ++ finishRange (start, osch))
+              -- Start building a range.
               ClassSingle cs -> contWith Noop $ Just (init class_' ++ [ClassRange (cs, cs)])
-              ClassRange (start, end) -> do
-                if start == end -- Range is not finished yet
-                  then contWith Noop $ Just (init class_' ++ [ClassSingle start])
-                  else contWith Noop $ Just (class_' ++ [ClassSingle osch])
+              ClassSep -> contWith Noop $ Just (class_' ++ [ClassSingle osch]) -- Just add '-'.
         _ -> do
           -- Maybe read one more char.
           (_, osch') <- if ch == '\\' then getOsChar else pure (ch, osch)
           case class_' of
             [] -> contWith Noop $ Just [ClassSingle osch']
             elems -> case last elems of
-              ClassSingle _ -> contWith Noop $ Just (class_' ++ [ClassSingle osch'])
-              ClassRange (start, end) -> do
-                if start == end -- Range is not finished yet
-                  then contWith Noop $ Just (init class_' ++ [finishRange (start, osch')])
-                  else contWith Noop $ Just (class_' ++ [ClassSingle osch'])
+              ClassRange (start, _) -> contWith Noop $ Just (init class_' ++ finishRange (start, osch'))
+              _ -> contWith Noop $ Just (class_' ++ [ClassSingle osch'])
   where
     contWith p = parseGlobInner (curr ++ [p])
 

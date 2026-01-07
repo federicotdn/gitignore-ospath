@@ -42,6 +42,7 @@ spec = do
       parse "  # test\n#test" `shouldBe` Ignore []
       parse "path" `shouldBe` Ignore [pat [path "path"] False False False]
       parse "!path" `shouldBe` Ignore [pat [path "path"] False True False]
+      parse "!!path" `shouldBe` Ignore [pat [path "!path"] False True False]
       parse "path/" `shouldBe` Ignore [pat [path "path"] True False False]
       parse "path///" `shouldBe` Ignore [pat [path "path"] True False False]
       parse "/path/" `shouldBe` Ignore [pat [path "path"] True False True]
@@ -56,6 +57,7 @@ spec = do
       parse "\\a" `shouldBe` Ignore [pat [Glob [Single (osc 'a')]] False False False]
       parse "a\\?" `shouldBe` Ignore [pat [Glob [Single (osc 'a'), Single (osc '?')]] False False False]
       parse "[ab]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'b')]]] False False False]
+      parse "[a\\b]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'b')]]] False False False]
       parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc ']')]]] False False False]
       parse "[-]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '-')]]] False False False]
       parse "[a-]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'a')]]] False False False]
@@ -68,11 +70,12 @@ spec = do
       parse "[a-z-]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z'), ClassSingle (osc '-')]]] False False False]
       parse "[z-a]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
       parse "[z-z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
-      parse "[z-a-m]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z')]]] False False False]
+      parse "[z-a-m]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'z'), ClassSingle (osc '-'), ClassSingle (osc 'm')]]] False False False]
       parse "[]]" `shouldBe` Ignore [pat [Glob [Single (osc ']')]] False False False]
       parse "[[]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '[')]]] False False False]
       parse "a[" `shouldBe` Ignore [] -- Unclosed class
       parse "a[b" `shouldBe` Ignore [] -- Unclosed class
+      parse "[b[" `shouldBe` Ignore [] -- Unclosed class
       parse "[]" `shouldBe` Ignore [] -- Empty
       parse "[a\\]" `shouldBe` Ignore [] -- Unclosed class
       parse "\\" `shouldBe` Ignore []
