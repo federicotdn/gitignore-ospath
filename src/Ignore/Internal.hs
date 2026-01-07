@@ -14,7 +14,7 @@ import qualified Text.ParserCombinators.ReadP as R
 data Segment
   = DAsterisk
   | Asterisk
-  | Const OsPath
+  | Literal OsPath
   | Prefix OsPath
   | Suffix OsPath
   | Glob [GlobPart]
@@ -136,7 +136,7 @@ parseSegment source
   | scount == 0 && acount == 1 && aprefix = Suffix . OS.tail <$> encoded
   | scount == 0 && acount == 1 && asuffix = Prefix . OS.init <$> encoded
   | scount > 0 || acount > 0 = parseGlob source
-  | otherwise = Const <$> encoded
+  | otherwise = Literal <$> encoded
   where
     aprefix = "*" `T.isPrefixOf` source
     asuffix = "*" `T.isSuffixOf` source
@@ -178,7 +178,7 @@ parse source =
 segmentMatches :: Segment -> OsPath -> Bool
 segmentMatches target path = case target of
   Asterisk -> True
-  Const val -> path == val
+  Literal val -> path == val
   Suffix val -> val `OS.isSuffixOf` path
   Prefix val -> val `OS.isPrefixOf` path
   Glob _ -> error "Unhandled Glob"

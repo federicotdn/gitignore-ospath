@@ -17,7 +17,7 @@ main :: IO ()
 main = hspec spec
 
 path :: String -> Segment
-path p = Const (os p)
+path p = Literal (os p)
 
 parseln :: [Text] -> Ignore
 parseln patterns = parse (T.intercalate "\n" patterns)
