@@ -64,13 +64,20 @@ getOsChar = do
     Just osch' -> pure (ch, osch')
     Nothing -> R.pfail
 
+finishRange :: (OsChar, OsChar) -> GlobClassPart
+finishRange (start, end) =
+  if start < end
+    then ClassRange (start, end)
+    else ClassSingle start
+
 parseGlobInner :: [GlobPart] -> Maybe [GlobClassPart] -> ReadP [GlobPart]
 parseGlobInner curr class_ = do
   atEnd <- null <$> R.look
   case class_ of
+    -- We are outside a class definition e.g. ab|cd[efg]
     Nothing ->
       if atEnd
-        then return curr
+        then return curr -- Finished!
         else do
           (ch, osch) <- getOsChar
           case ch of
@@ -83,16 +90,34 @@ parseGlobInner curr class_ = do
               (_, osch') <- getOsChar
               contWith (Single osch') Nothing
             _ -> contWith (Single osch) Nothing -- Even for ']'.
+
+    -- We are inside a class definition e.g. abcd[e|fg]
     Just class_' -> do
       -- The line below will fail if there's nothing to read, i.e.
       -- the class was opened but never closed.
       (ch, osch) <- getOsChar
       case ch of
         ']' -> contWith (if null class_' then Noop else Class class_') Nothing
-        '\\' -> do
-          (_, osch') <- getOsChar
-          contWith Noop $ Just (class_' ++ [ClassSingle osch'])
-        _ -> contWith Noop $ Just (class_' ++ [ClassSingle osch])
+        '-' -> do
+          case class_' of
+            [] -> contWith Noop $ Just [ClassSingle osch]
+            elems -> case last elems of
+              ClassSingle cs -> contWith Noop $ Just (init class_' ++ [ClassRange (cs, cs)])
+              ClassRange (start, end) -> do
+                if start == end -- Range is not finished yet
+                  then contWith Noop $ Just (init class_')
+                  else contWith Noop $ Just (class_' ++ [ClassSingle osch])
+        _ -> do
+          -- Maybe read one more char.
+          (_, osch') <- if ch == '\\' then getOsChar else pure (ch, osch)
+          case class_' of
+            [] -> contWith Noop $ Just [ClassSingle osch']
+            elems -> case last elems of
+              ClassSingle _ -> contWith Noop $ Just (class_' ++ [ClassSingle osch'])
+              ClassRange (start, end) -> do
+                if start == end -- Range is not finished yet
+                  then contWith Noop $ Just (init class_' ++ [finishRange (start, osch')])
+                  else contWith Noop $ Just (class_' ++ [ClassSingle osch'])
   where
     contWith p = parseGlobInner (curr ++ [p])
 
