@@ -50,17 +50,19 @@ spec = do
       parse "**/path/" `shouldBe` Ignore [pat [DAsterisk, path "path"] True False True]
       parse "/path/**" `shouldBe` Ignore [pat [path "path", DAsterisk] False False True]
       parse "/path/**/" `shouldBe` Ignore [pat [path "path", DAsterisk] True False True]
-      parse "a?" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Wildcard False]] False False False]
-      parse "*a*" `shouldBe` Ignore [pat [Glob [Wildcard True, Chars [osc 'a'], Wildcard True]] False False False]
-      parse "a]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Chars [osc ']']]] False False False]
-      parse "\\a" `shouldBe` Ignore [pat [Glob [Chars [osc 'a']]] False False False]
-      parse "a\\?" `shouldBe` Ignore [pat [Glob [Chars [osc 'a'], Chars [osc '?']]] False False False]
-      parse "[ab]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a', osc 'b']]] False False False]
-      parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Chars [osc 'a', osc ']']]] False False False]
-      parse "a[" `shouldBe` Ignore [] -- Unclosed range
-      parse "a[b" `shouldBe` Ignore [] -- Unclosed range
+      parse "a?" `shouldBe` Ignore [pat [Glob [Single (osc 'a'), Wildcard False]] False False False]
+      parse "*a*" `shouldBe` Ignore [pat [Glob [Wildcard True, Single (osc 'a'), Wildcard True]] False False False]
+      parse "a]" `shouldBe` Ignore [pat [Glob [Single (osc 'a'), Single (osc ']')]] False False False]
+      parse "\\a" `shouldBe` Ignore [pat [Glob [Single (osc 'a')]] False False False]
+      parse "a\\?" `shouldBe` Ignore [pat [Glob [Single (osc 'a'), Single (osc '?')]] False False False]
+      parse "[ab]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'b')]]] False False False]
+      parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc ']')]]] False False False]
+      parse "a[" `shouldBe` Ignore [] -- Unclosed class
+      parse "a[b" `shouldBe` Ignore [] -- Unclosed class
       parse "[]" `shouldBe` Ignore [] -- Empty
-      parse "[a\\]" `shouldBe` Ignore [] -- Unclosed range
+      parse "[a\\]" `shouldBe` Ignore [] -- Unclosed class
+      parse "\\" `shouldBe` Ignore []
+
   describe "ignores" $ do
     it "ignores paths correctly (single pattern)" $ do
       ignores (parse "") (os "") False `shouldBe` False

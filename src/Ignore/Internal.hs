@@ -20,7 +20,9 @@ data Segment
   | Glob [GlobPart]
   deriving (Show, Eq)
 
-data GlobPart = Wildcard Bool | Chars [OsChar] | Noop deriving (Show, Eq)
+data GlobClassPart = ClassSingle OsChar | ClassRange (OsChar, OsChar) deriving (Show, Eq)
+
+data GlobPart = Wildcard Bool | Single OsChar | Class [GlobClassPart] | Noop deriving (Show, Eq)
 
 data Pattern = Pattern
   { pSegments :: [Segment],
@@ -62,10 +64,10 @@ getOsChar = do
     Just osch' -> pure (ch, osch')
     Nothing -> R.pfail
 
-parseGlobInner :: [GlobPart] -> Maybe [OsChar] -> ReadP [GlobPart]
-parseGlobInner curr range = do
+parseGlobInner :: [GlobPart] -> Maybe [GlobClassPart] -> ReadP [GlobPart]
+parseGlobInner curr class_ = do
   atEnd <- null <$> R.look
-  case range of
+  case class_ of
     Nothing ->
       if atEnd
         then return curr
@@ -79,18 +81,18 @@ parseGlobInner curr range = do
               -- Read one more, interpret it literally.
               -- If there's nothing to read, pfail.
               (_, osch') <- getOsChar
-              contWith (Chars [osch']) Nothing
-            _ -> contWith (Chars [osch]) Nothing -- Even for ']'.
-    Just range' -> do
+              contWith (Single osch') Nothing
+            _ -> contWith (Single osch) Nothing -- Even for ']'.
+    Just class_' -> do
       -- The line below will fail if there's nothing to read, i.e.
-      -- the range was opened but never closed.
+      -- the class was opened but never closed.
       (ch, osch) <- getOsChar
       case ch of
-        ']' -> contWith (if null range' then Noop else Chars range') Nothing
+        ']' -> contWith (if null class_' then Noop else Class class_') Nothing
         '\\' -> do
           (_, osch') <- getOsChar
-          contWith Noop $ Just (range' ++ [osch'])
-        _ -> contWith Noop $ Just (range' ++ [osch])
+          contWith Noop $ Just (class_' ++ [ClassSingle osch'])
+        _ -> contWith Noop $ Just (class_' ++ [ClassSingle osch])
   where
     contWith p = parseGlobInner (curr ++ [p])
 
