@@ -141,8 +141,8 @@ parseGlob source = do
 
 parseSegment :: Text -> Maybe Segment
 parseSegment source
-  | source == "**" = Just DAsterisk
   | source == "*" = Just Asterisk
+  | T.length source == acount = Just DAsterisk -- '**' or more asterisks
   | scount == 0 && acount == 1 && aprefix = Suffix . OS.tail <$> encoded
   | scount == 0 && acount == 1 && asuffix = Prefix . OS.init <$> encoded
   | scount > 0 || acount > 0 = parseGlob source

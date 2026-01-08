@@ -60,6 +60,8 @@ spec = do
       parse "[a\\b]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'b')]]] False False False]
       parse "[a\\]]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc ']')]]] False False False]
       parse "[-]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '-')]]] False False False]
+      parse "[--]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc '-', osc '-')]]] False False False]
+      parse "[---]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc '-')]]] False False False]
       parse "[a-]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'a')]]] False False False]
       parse "[a-z]" `shouldBe` Ignore [pat [Glob [Class [ClassRange (osc 'a', osc 'z')]]] False False False]
       parse "[a--z]" `shouldBe` Ignore [pat [Glob [Class [ClassSingle (osc 'a'), ClassSingle (osc 'z')]]] False False False]
@@ -124,12 +126,14 @@ spec = do
       ignores (parse "**/foo/bar") (os "x/foo/bar") False `shouldBe` True
       ignores (parse "**/foo/baz") (os "x/foo/bar") False `shouldBe` False
       ignores (parse "bar/**") (os "bar/a") False `shouldBe` True
+      ignores (parse "bar/***") (os "bar/a") False `shouldBe` True
       ignores (parse "*/**") (os "bar/a") False `shouldBe` True
       ignores (parse "bar/**") (os "bar") False `shouldBe` False
       ignores (parse "bar/**/x") (os "bar/x") False `shouldBe` True
       ignores (parse "bar/**/x") (os "bar/1/2/3/x") False `shouldBe` True
       ignores (parse "bar/**/x/") (os "bar/1/2/3/x") False `shouldBe` False
       ignores (parse "bar/**/x/") (os "bar/1/2/3/x") True `shouldBe` True
+      ignores (parse "bar/***/x/") (os "bar/1/2/3/x") True `shouldBe` True
       ignores (parse "bar/**/") (os "bar/test") True `shouldBe` True
       ignores (parse "bar/**/") (os "bar/test") False `shouldBe` False
       ignores (parse "**/x") (os "foo") False `shouldBe` False
@@ -143,6 +147,7 @@ spec = do
       ignores (parse "/**/foo") (os "foo") False `shouldBe` True
       ignores (parse "/**/foo") (os "x/foo") False `shouldBe` True
       ignores (parse "/**/foo") (os "x/y/foo") False `shouldBe` True
+      ignores (parse "/***/foo") (os "x/y/foo") False `shouldBe` True
       ignores (parse "!foo/") (os "foo") True `shouldBe` False
       ignores (parse "!foo") (os "foo") True `shouldBe` False
       ignores (parse ".*") (os "foo") False `shouldBe` False
