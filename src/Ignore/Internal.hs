@@ -43,7 +43,7 @@ data Pattern = Pattern
 
 -- | The parsed contents of a gitignore file.
 --
--- Multiple 'Ignore' values can be combined using '<>' to merge their patterns.
+-- Multiple t'Ignore' values can be combined using '<>' to merge their patterns.
 -- This is useful for combining patterns from multiple gitignore files (e.g.,
 -- a global gitignore and a repository-specific one). Later patterns take
 -- precedence when determining if a path should be ignored.
@@ -175,7 +175,7 @@ parsePattern source =
                 pAnchored = anchored
               }
 
--- | Parse a complete gitignore file content into an 'Ignore' collection.
+-- | Parse a complete gitignore file content into an t'Ignore' collection.
 --
 -- Strips whitespace, removes comments (lines starting with @#@), and parses
 -- each remaining line as a pattern.
@@ -263,13 +263,13 @@ ignoresInner :: Ignore -> [OsPath] -> Bool -> Bool
 ignoresInner (Ignore patterns) splitPath dir =
   last $ False : mapMaybe (\pat -> patternIgnores pat splitPath dir) patterns
 
--- | Check if an 'Ignore' collection ignores the given path.
+-- | Check if an t'Ignore' collection ignores the given path.
 --
 -- The third parameter indicates whether the path is a directory.
 ignores :: Ignore -> OsPath -> Bool -> Bool
 ignores ign path = ignoresInner ign (splitDirectories path)
 
--- | Check if an 'Ignore' collection ignores the given pre-split path.
+-- | Check if an t'Ignore' collection ignores the given pre-split path.
 --
 -- Like 'ignores', but takes a path already split into components. The third
 -- parameter indicates whether the path is a directory.
