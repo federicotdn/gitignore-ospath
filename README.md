@@ -21,7 +21,7 @@ Given the following `.gitignore` file:
 /baz/**
 !/baz/special
 
-*.py
+*.py?
 ```
 
 The library can be used as follows:
@@ -50,13 +50,9 @@ True
 > ignores ign (os "baz/special") False
 False
 > ignores ign (os "foo.py") False
+False
+> ignores ign (os "foo.pyc") False
 True
 ```
 
 The `ignores'` variant of `ignores` takes an `OsPath` that was already split (i.e. `[OsPath]`) instead of `OsPath` directly. This is useful for contexts where the user is building paths by segment, for example when recursing into a directory. Using `ignores'` in this case help avoid making calls to `splitDirectories`.
-
-## Caveats
-
-Patterns containing character classes (`[a-zA-Z]`), optional characters (`a?`), wildcards (`*`) and escape sequences (`\*`) are not yet supported, and will be interpreted literally.
-
-As an exception, patterns in the form of `*abc` or `abc*` are supported, which should cover a good amount of patterns such as `.*` (hidden files) or `*.py` (file extensions). Plain `*` is supported as well.

@@ -185,13 +185,45 @@ parse source =
       patterns = filter (\l -> T.head l /= '#') sourceLines
    in Ignore (mapMaybe parsePattern patterns)
 
+globClassMatches :: OsChar -> GlobClassPart -> Bool
+globClassMatches curr part =
+  case part of
+    ClassSingle osch -> osch == curr
+    ClassRange (start, end) -> (start <= curr) && (curr <= end)
+    ClassSep -> False
+
+matchesEmpty :: GlobPart -> Bool
+matchesEmpty (Wildcard True) = True
+matchesEmpty Noop = True
+matchesEmpty _ = False
+
+globMatches :: [GlobPart] -> OsPath -> Bool
+globMatches parts path =
+  if OS.null path
+    then null parts || all matchesEmpty parts
+    else case parts of
+      [] -> False
+      (part : rest) ->
+        let pathTail = OS.tail path
+            cont = globMatches rest pathTail
+            curr = OS.head path
+         in case part of
+              Wildcard True -> cont || globMatches parts pathTail || globMatches rest path
+              Wildcard False -> cont
+              Single osch -> if osch == curr then cont else False
+              Noop -> globMatches rest path
+              Class classParts ->
+                if any (globClassMatches curr) classParts
+                  then cont
+                  else False
+
 segmentMatches :: Segment -> OsPath -> Bool
 segmentMatches target path = case target of
   Asterisk -> True
   Literal val -> path == val
   Suffix val -> val `OS.isSuffixOf` path
   Prefix val -> val `OS.isPrefixOf` path
-  Glob _ -> error "Unhandled Glob" -- TODO
+  Glob parts -> globMatches parts path
   -- NOTE: DAsterisk is already handled in 'patternIgnoresInner'.
   DAsterisk -> error "Unhandled ** pattern"
 

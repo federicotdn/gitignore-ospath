@@ -170,8 +170,25 @@ spec = do
       ignores (parse "!**/*.py") (os "zzz") False `shouldBe` False
       ignores (parse "/baz/**") (os "a/baz/foo") False `shouldBe` False
       -- Globs
-      -- ignores (parse "foo]") (os "foo]") False `shouldBe` True
-      -- ignores (parse "\\?") (os "?") False `shouldBe` True
+      ignores (parse "??") (os "ab") False `shouldBe` True
+      ignores (parse "??") (os "abc") False `shouldBe` False
+      ignores (parse "?ab*") (os "aabcd") False `shouldBe` True
+      ignores (parse "a*c") (os "abc") False `shouldBe` True
+      ignores (parse "a*c") (os "ac") False `shouldBe` True
+      ignores (parse "a*cb") (os "acb") False `shouldBe` True
+      ignores (parse "a*c") (os "abx") False `shouldBe` False
+      ignores (parse "foo]") (os "foo]") False `shouldBe` True
+      ignores (parse "\\?") (os "?") False `shouldBe` True
+      ignores (parse "[]") (os "a") False `shouldBe` False
+      ignores (parse "[-]") (os "-") False `shouldBe` True
+      ignores (parse "[ab]") (os "a") False `shouldBe` True
+      ignores (parse "[ab]") (os "c") False `shouldBe` False
+      ignores (parse "[a-z]") (os "c") False `shouldBe` True
+      ignores (parse "[a-z]") (os "0") False `shouldBe` False
+      ignores (parse "[a-zA-Z]") (os "A") False `shouldBe` True
+      ignores (parse "[z-a]") (os "z") False `shouldBe` True
+      ignores (parse "*.?[a-z][-]\\?\\**") (os "abc.xa-?*-") False `shouldBe` True
+      ignores (parse "*.?[a-z][-]\\?\\**") (os "abcxa-?*-") False `shouldBe` False
 
       -- From https://git-scm.com/docs/gitignore:
       ignores (parse "doc/frotz/") (os "doc/frotz") True `shouldBe` True
