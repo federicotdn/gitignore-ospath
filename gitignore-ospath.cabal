@@ -1,9 +1,8 @@
 cabal-version:      3.0
 name:               gitignore-ospath
 version:            0.1.0.1
-synopsis:           Library for reading .gitignore files and filtering paths.
+synopsis:           Library for reading .gitignore files and filtering paths
 description:        Library for reading .gitignore files and filtering paths.
-                    .
                     The library works with .gitignore-like formats (e.g., .dockerignore) and uses
                     'System.OsPath.OsPath' for path handling. Parsing and filtering rules follow the
                     Git documentation.
