@@ -271,7 +271,7 @@ ignores ign path = ignoresInner ign (splitDirectories path)
 
 -- | Check if an t'Ignore' collection ignores the given pre-split path.
 --
--- Like 'ignores', but takes a path already split into components. The third
+-- Like 'ignores', but takes a path already split into segments. The third
 -- parameter indicates whether the path is a directory.
 ignores' :: Ignore -> [OsPath] -> Bool -> Bool
 ignores' = ignoresInner

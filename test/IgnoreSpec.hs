@@ -187,6 +187,9 @@ spec = do
       ignores (parse "[a-z]") (os "0") False `shouldBe` False
       ignores (parse "[a-zA-Z]") (os "A") False `shouldBe` True
       ignores (parse "[z-a]") (os "z") False `shouldBe` True
+      ignores (parse "[?]") (os "?") False `shouldBe` True
+      ignores (parse "[*]") (os "*") False `shouldBe` True
+      ignores (parse "[*]") (os "a") False `shouldBe` False
       ignores (parse "*.?[a-z][-]\\?\\**") (os "abc.xa-?*-") False `shouldBe` True
       ignores (parse "*.?[a-z][-]\\?\\**") (os "abcxa-?*-") False `shouldBe` False
 
