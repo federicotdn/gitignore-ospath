@@ -89,6 +89,7 @@ spec = do
       ignores (parse "!") (os "foo") False `shouldBe` False
       ignores (parse "!*") (os "foo") False `shouldBe` False
       ignores (parse "bar") (os "foo") False `shouldBe` False
+      ignores (parse "bár") (os "bár") False `shouldBe` True
       ignores (parse "!bar") (os "foo") False `shouldBe` False
       ignores (parse "foo") (os "foo") False `shouldBe` True
       ignores (parse "/") (os "foo") False `shouldBe` False
