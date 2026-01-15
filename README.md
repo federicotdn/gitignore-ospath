@@ -7,9 +7,6 @@ A compact Haskell library for reading `.gitignore` files and filtering paths.
 
 The library should also work with other `.gitignore`-like formats, e.g. `.dockerignore`. The rules for parsing and filtering where taken from the [Git documentation pages](https://git-scm.com/docs/gitignore). Input paths must be `OsPath`.
 
-> [!WARNING]
-> This library is still at a very early development phase, so it may be missing some features. The API may also be changed significantly.
-
 ## Usage
 
 Given the following `.gitignore` file:
