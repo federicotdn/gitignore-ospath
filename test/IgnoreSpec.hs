@@ -180,6 +180,7 @@ spec = do
       ignores (parse "a*c") (os "abx") False `shouldBe` False
       ignores (parse "foo]") (os "foo]") False `shouldBe` True
       ignores (parse "\\?") (os "?") False `shouldBe` True
+      ignores (parse "foo\\\\bar") (os "foo\\bar") False `shouldBe` True
       ignores (parse "[]") (os "a") False `shouldBe` False
       ignores (parse "[-]") (os "-") False `shouldBe` True
       ignores (parse "[ab]") (os "a") False `shouldBe` True
